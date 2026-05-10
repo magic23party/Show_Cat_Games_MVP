@@ -55,8 +55,10 @@ namespace AZE.AdvancedFirstPerson
             JumpTriggered = jumpAction.action.WasPressedThisFrame();
             SprintPressed = sprintAction.action.IsPressed();
 
-            if (crouchAction.action.WasPressedThisFrame())
-                CrouchTriggered = !CrouchTriggered;
+            // Half-Life style: hold to crouch, release to stand.
+            // PlayerCrouchState already gates the stand-up on CanStandUp(),
+            // so releasing under a low ceiling won't clip the player into geometry.
+            CrouchTriggered = crouchAction.action.IsPressed();
         }
 
         public InputDevice GetLookDevice => lookAction.action.activeControl?.device;

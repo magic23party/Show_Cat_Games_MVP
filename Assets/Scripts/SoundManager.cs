@@ -105,15 +105,17 @@ public class SoundManager : MonoBehaviour
         sfxOneShotSource.PlayOneShot(e.clip, e.volume * sfxVolume);
     }
 
-    public void PlayFootstep3D() => PlayRandomFromArray(steps3D);
-    public void PlayFootstep2D() => PlayRandomFromArray(steps2D);
+    public void PlayFootstep3D() => PlayRandomFromArray(steps3D, 1f);
+    public void PlayFootstep3D(float volumeMul) => PlayRandomFromArray(steps3D, volumeMul);
+    public void PlayFootstep2D() => PlayRandomFromArray(steps2D, 1f);
+    public void PlayFootstep2D(float volumeMul) => PlayRandomFromArray(steps2D, volumeMul);
 
-    private void PlayRandomFromArray(AudioClip[] arr)
+    private void PlayRandomFromArray(AudioClip[] arr, float volumeMul)
     {
         if (arr == null || arr.Length == 0) return;
         AudioClip clip = arr[UnityEngine.Random.Range(0, arr.Length)];
         if (clip == null) return;
-        sfxOneShotSource.PlayOneShot(clip, stepsVolume * sfxVolume);
+        sfxOneShotSource.PlayOneShot(clip, stepsVolume * sfxVolume * Mathf.Clamp01(volumeMul));
     }
 
     public void PlayMusic3D() => PlayMusicTrack(MusicTrack.Track3D, music3D);
