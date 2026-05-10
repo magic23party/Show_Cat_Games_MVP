@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 06b09c59eb139c04d81d32e2e43183d1
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 355690
+  packageName: Advanced First Person Movement System
+  packageVersion: 1.0
+  assetPath: Assets/Documentation/README.md
+  uploadId: 870592
