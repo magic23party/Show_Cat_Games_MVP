@@ -35,11 +35,19 @@ public class EndGameTrigger : MonoBehaviour
     [SerializeField] private CanvasGroup fadeCanvasGroup;
 
     private bool fired = false;
+    private AudioSource audioSource;
+
+    void Start()
+    {
+        // Получаем компонент звука, прикрепленный к триггеру
+        audioSource = GetComponent<AudioSource>();
+    }
 
     private void OnTriggerEnter(Collider other)
     {
         if (mode != TriggerMode.ThreeD) return;
         if (!other.CompareTag(playerTag)) return;
+        audioSource.Play();
         Trigger();
     }
 
