@@ -3,7 +3,47 @@ guid: 73fbf86a0de7ba549bc1e09cf3dd15be
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black_p
+    second: {fileID: 2100000, guid: 60a3b10a14d6acc47a6e2ef5d8738887, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: USB_Black Plastic
+    second: {fileID: 2100000, guid: 3915528f927cc6d4684b98932ed43a7e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: USB_Metal
+    second: {fileID: 2100000, guid: 937bcb0bed813f44999c7d6dd98d876b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: USB_Metal Cooper
+    second: {fileID: 2100000, guid: 891bcfec9a8f6754184499cb0e14d2cc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: USB_Red Plastic
+    second: {fileID: 2100000, guid: ce8f565166baef54d8ebf00558f24e61, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: glove_p
+    second: {fileID: 2100000, guid: a3f7ac4a6d7c84b48a9584bf1ebc7661, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: monitor
+    second: {fileID: 2100000, guid: efe6ad3058407eb4ba2d26e0ee383490, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skin_p
+    second: {fileID: 2100000, guid: da87c340357ab4d4b88a9d5e97d9b9a0, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
