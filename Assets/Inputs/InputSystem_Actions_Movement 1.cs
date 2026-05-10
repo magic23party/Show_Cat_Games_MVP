@@ -134,7 +134,7 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
                     ""id"": ""27c5f898-bc57-4ee1-8800-db469aca5fe3"",
                     ""expectedControlType"": """",
                     ""processors"": """",
-                    ""interactions"": """",
+                    ""interactions"": ""Press"",
                     ""initialStateCheck"": false
                 },
                 {
@@ -189,6 +189,15 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": ""Press"",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Crouch1"",
+                    ""type"": ""Button"",
+                    ""id"": ""9da1af28-2844-44fc-8184-94ec491e7137"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=1)"",
                     ""initialStateCheck"": false
                 }
             ],
@@ -593,7 +602,7 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
                     ""name"": """",
                     ""id"": ""36e52cba-0905-478e-a818-f4bfcb9f3b9a"",
                     ""path"": ""<Keyboard>/ctrl"",
-                    ""interactions"": """",
+                    ""interactions"": ""Press"",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""Crouch"",
@@ -696,6 +705,17 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""Pickup"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d31e5f1e-95f3-415a-a7d4-5c00f3c5d848"",
+                    ""path"": ""<Keyboard>/leftCtrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Crouch1"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1294,6 +1314,7 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
         m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
         m_Player_Pickup = m_Player.FindAction("Pickup", throwIfNotFound: true);
+        m_Player_Crouch1 = m_Player.FindAction("Crouch1", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1398,6 +1419,7 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
     private readonly InputAction m_Player_Sprint;
     private readonly InputAction m_Player_Dodge;
     private readonly InputAction m_Player_Pickup;
+    private readonly InputAction m_Player_Crouch1;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1453,6 +1475,10 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
         /// Provides access to the underlying input action "Player/Pickup".
         /// </summary>
         public InputAction @Pickup => m_Wrapper.m_Player_Pickup;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Crouch1".
+        /// </summary>
+        public InputAction @Crouch1 => m_Wrapper.m_Player_Crouch1;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1512,6 +1538,9 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
             @Pickup.started += instance.OnPickup;
             @Pickup.performed += instance.OnPickup;
             @Pickup.canceled += instance.OnPickup;
+            @Crouch1.started += instance.OnCrouch1;
+            @Crouch1.performed += instance.OnCrouch1;
+            @Crouch1.canceled += instance.OnCrouch1;
         }
 
         /// <summary>
@@ -1556,6 +1585,9 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
             @Pickup.started -= instance.OnPickup;
             @Pickup.performed -= instance.OnPickup;
             @Pickup.canceled -= instance.OnPickup;
+            @Crouch1.started -= instance.OnCrouch1;
+            @Crouch1.performed -= instance.OnCrouch1;
+            @Crouch1.canceled -= instance.OnCrouch1;
         }
 
         /// <summary>
@@ -1933,6 +1965,13 @@ public partial class @InputSystem_Actions_Movement1: IInputActionCollection2, ID
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnPickup(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Crouch1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCrouch1(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
