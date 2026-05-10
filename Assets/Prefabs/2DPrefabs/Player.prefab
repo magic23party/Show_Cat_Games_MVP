@@ -421,6 +421,7 @@ GameObject:
   - component: {fileID: 3213259104454701870}
   - component: {fileID: 1868357830118979999}
   - component: {fileID: 6241714510780802680}
+  - component: {fileID: 2000000000000000001}
   m_Layer: 11
   m_Name: Player
   m_TagString: Player
@@ -1768,3 +1769,44 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3213259104454701875}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2000000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3213259104454701869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a1c8b9e6f0d4a4d8e2b1c3d4e5f6a70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteRenderer: {fileID: 3213259104454701874}
+  idleFrames:
+  - {fileID: 21300000, guid: 6deba2b448e520f4eb84aa5400a942c6, type: 2}
+  - {fileID: 21300000, guid: 7aa05a6985ce92c458d7091ca914c3c8, type: 2}
+  - {fileID: 21300000, guid: 435775475bf0c044d94b127d15e36dcf, type: 2}
+  - {fileID: 21300000, guid: e908eb574424b394c8762f30b1f0b174, type: 2}
+  - {fileID: 21300000, guid: d7cebbc7dc153a1489bb5863a4b78c30, type: 2}
+  walkFrames:
+  - {fileID: 21300000, guid: 09cfcf9e7e956654ca992d7135a0167d, type: 2}
+  - {fileID: 21300000, guid: dd931570aca02034cbe14423a8dad1bd, type: 2}
+  - {fileID: 21300000, guid: 2a39911caf12caa4cb3beb9aac8bd65b, type: 2}
+  - {fileID: 21300000, guid: a0d1f74abba342c45be0180646bcc7d8, type: 2}
+  - {fileID: 21300000, guid: d5e945c8e5b74954f86a2c50eae76634, type: 2}
+  runFrames:
+  - {fileID: 21300000, guid: 817c3e0d4d2bc1346a3068c675d7fc7c, type: 2}
+  - {fileID: 21300000, guid: aaeeefcd87e4f6445bc235724e8ee196, type: 2}
+  - {fileID: 21300000, guid: d2351f7b580f44a4b9112ddb904e46f8, type: 2}
+  - {fileID: 21300000, guid: 085764c71733a884f8bf07717bdecb51, type: 2}
+  - {fileID: 21300000, guid: 3fd14401993db494999e12d860499f46, type: 2}
+  jumpFrames:
+  - {fileID: 21300000, guid: 1e9c19e43fdf30b4790e9ec75d64700f, type: 2}
+  - {fileID: 21300000, guid: 6e0fdd16a73e0b0498fad56b8ba34da7, type: 2}
+  - {fileID: 21300000, guid: 70562a5252178ea44a853aed0b2bfecf, type: 2}
+  - {fileID: 21300000, guid: 10f03ef47b92f0b4695a0f7a02ec7c11, type: 2}
+  - {fileID: 21300000, guid: 44fbaa1582874e942a89b2185a1c259a, type: 2}
+  framesPerSecond: 10
+  runSpeedThreshold: 5
+  flipBasedOnMovement: 0
+  overrideAnimatorColor: 1
