@@ -2,26 +2,24 @@ using UnityEngine;
 
 /// <summary>
 /// Меняет цвет 3D-куба на основе строкового свойства Color в WorldState.
-/// 
-/// Использует MaterialPropertyBlock — это значит, что мы НЕ создаём новый материал
-/// (sharedMaterial остаётся общим, GPU-инстансинг продолжает работать).
+/// Использует MaterialPropertyBlock — не создаёт копий материала.
 ///
-/// Цветовые имена: "red", "blue", "yellow", "purple", "orange", "green", "white".
-/// Палитра должна совпадать с ColorMixer (или настрой в инспекторе индивидуально).
+/// Реагирует только на события OnStringChanged + применяет initialColor при старте.
 /// </summary>
 public class HackableColor : HackableStringProperty
 {
     public override string PropertyType => "Color";
 
+    [Header("Initial Color (стартовый цвет, перезаписывает WorldState при загрузке сцены)")]
+    [SerializeField] private string initialColor = "white";
+
     [Header("Renderer")]
-    [Tooltip("Renderer, чей цвет менять. Если null — берётся с этого GameObject или его детей.")]
     [SerializeField] private Renderer targetRenderer;
 
     [Header("Shader Property")]
-    [Tooltip("Имя свойства цвета в шейдере. Для URP/Lit это '_BaseColor'. Для Standard — '_Color'.")]
     [SerializeField] private string colorPropertyName = "_BaseColor";
 
-    [Header("Color Palette (можешь подправить, или скопировать из ColorMixer для согласованности)")]
+    [Header("Color Palette")]
     [SerializeField] private Color colorRed = new Color(0.9f, 0.15f, 0.15f);
     [SerializeField] private Color colorBlue = new Color(0.15f, 0.3f, 0.9f);
     [SerializeField] private Color colorYellow = new Color(1f, 0.9f, 0.1f);
@@ -43,13 +41,22 @@ public class HackableColor : HackableStringProperty
         mpb = new MaterialPropertyBlock();
         colorPropertyId = Shader.PropertyToID(colorPropertyName);
 
-        // По умолчанию value = "white"
-        defaultValue = "white";
+        defaultValue = initialColor;
+    }
+
+    protected override void Start()
+    {
+        // Принудительно записываем initialColor при старте — куб всегда стартует в нужном цвете
+        if (GameManager.Instance != null && !string.IsNullOrEmpty(initialColor))
+        {
+            GameManager.Instance.World.SetString(owner.objectId, PropertyType, initialColor);
+        }
+
+        base.Start();
     }
 
     protected override void ApplyValue(string value)
     {
-        Debug.Log($"[HackableColor on {name}, objId={owner?.objectId}] ApplyValue('{value}')"); 
         if (targetRenderer == null) return;
 
         Color c = StringToColor(value);
@@ -64,14 +71,14 @@ public class HackableColor : HackableStringProperty
         if (string.IsNullOrEmpty(colorName)) return colorWhite;
         switch (colorName.Trim().ToLowerInvariant())
         {
-            case "red":    return colorRed;
-            case "blue":   return colorBlue;
+            case "red": return colorRed;
+            case "blue": return colorBlue;
             case "yellow": return colorYellow;
             case "purple": return colorPurple;
             case "orange": return colorOrange;
-            case "green":  return colorGreen;
+            case "green": return colorGreen;
             case "white":
-            default:       return colorWhite;
+            default: return colorWhite;
         }
     }
 }

@@ -1,22 +1,25 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
-/// Слот для команды.
-///
-/// При старте сцены восстанавливает состояние из WorldState:
-/// - Если в WorldState есть значение и в сцене есть команда с этим Value — помещает её в слот.
-/// - Иначе — использует initialCommand (если задан).
-/// - Иначе — слот пустой.
-///
-/// Поведение при изъятии:
-/// - RememberLast: WorldState не трогается (для дверей).
-/// - SetEmpty: WorldState получает emptyValue (для цветов).
+/// Слот для команды. Пассивный — не слушает E.
+/// 
+/// Логика взаимодействия в PlayerCommandCarrier на игроке.
+/// Этот скрипт:
+/// - сообщает carrier когда игрок зашёл/вышел из зоны (через триггер)
+/// - предоставляет методы PlaceCommand / TakeCommand
+/// - применяет значение текущей команды к WorldState
+/// - при старте восстанавливает состояние из WorldState (или использует initialCommand)
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class HackSlot : MonoBehaviour
 {
-    public enum EmptyMode { RememberLast, SetEmpty }
+    public enum EmptyMode
+    {
+        /// <summary>Пустой слот → WorldState не трогается (для дверей).</summary>
+        RememberLast,
+        /// <summary>Пустой слот → WorldState получает emptyValue (для цветов).</summary>
+        SetEmpty
+    }
 
     [Header("Target")]
     [SerializeField] private string targetObjectId;
@@ -35,103 +38,56 @@ public class HackSlot : MonoBehaviour
     [Header("Player Detection")]
     [SerializeField] private string playerTag = "Player";
 
-    [Header("Input")]
-    [SerializeField] private InputActionReference interactAction;
-
-    [Header("UI Hints")]
-    [SerializeField] private string placePromptText = "Press E to place";
-    [SerializeField] private string takePromptText = "Press E to take";
-
-    private bool playerInRange;
-    private PlayerCommandCarrier carrier;
-    private HackCommand currentCommand;
+    public HackCommand CurrentCommand { get; private set; }
 
     public Vector3 SlotPosition =>
         commandAnchor != null ? commandAnchor.position : transform.position;
 
-    private void OnEnable()
-    {
-        if (interactAction != null)
-        {
-            interactAction.action.Enable();
-            interactAction.action.performed += OnInteractPerformed;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (interactAction != null)
-            interactAction.action.performed -= OnInteractPerformed;
-    }
-
     private void Start()
     {
-        // Сначала пробуем восстановить состояние из WorldState
-        bool restored = TryRestoreFromWorldState();
-
-        if (restored) return;
-
-        // Если не восстановили — используем initialCommand
-        if (initialCommand != null)
-        {
-            currentCommand = initialCommand;
-            initialCommand.PlaceInSlot(SlotPosition);
-            ApplyValueToWorld(initialCommand.Value);
-        }
-        else
-        {
-            // Слот стартово пустой
-            if (onEmptyMode == EmptyMode.SetEmpty)
-                ApplyValueToWorld(emptyValue);
-        }
+        InitializeFromWorldState();
     }
 
-    /// <summary>
-    /// Если в WorldState уже записано значение для targetObjectId — ищем в сцене команду
-    /// с этим Value и помещаем её в слот. Возвращает true если удалось восстановить.
-    /// </summary>
-    private bool TryRestoreFromWorldState()
+    private void InitializeFromWorldState()
     {
-        if (GameManager.Instance == null) return false;
-        if (string.IsNullOrEmpty(targetObjectId)) return false;
-
+        if (GameManager.Instance == null) return;
         var ws = GameManager.Instance.World;
-        // Используем флаг — было ли значение задано вообще.
-        // GetString вернёт defaultValue если не задано, но defaultValue здесь зависит от вызова.
+
         string saved = ws.GetString(targetObjectId, targetPropertyType, null);
-        if (string.IsNullOrEmpty(saved)) return false;
 
-        // Если saved == emptyValue — слот должен быть пустым (для SetEmpty-режима)
+        // КЕЙС 1: WorldState пустой → используем initialCommand
+        if (string.IsNullOrEmpty(saved))
+        {
+            if (initialCommand != null)
+            {
+                PlaceCommandInternal(initialCommand);
+                ApplyValueToWorld(initialCommand.Value);
+            }
+            else
+            {
+                if (onEmptyMode == EmptyMode.SetEmpty)
+                    ApplyValueToWorld(emptyValue);
+            }
+            return;
+        }
+
+        // КЕЙС 2: В WorldState есть значение
         if (onEmptyMode == EmptyMode.SetEmpty && saved == emptyValue)
-        {
-            // Просто оставляем слот пустым, WorldState уже содержит emptyValue
-            return true;
-        }
+            return; // слот пустой
 
-        // Ищем в сцене команду с таким Value
         HackCommand found = FindFreeCommandWithValue(saved);
-        if (found == null)
-        {
-            // Команды с таким значением нет — оставляем слот пустым,
-            // но WorldState уже содержит saved (не трогаем)
-            return true;
-        }
-
-        // Помещаем найденную команду в слот
-        currentCommand = found;
-        found.PlaceInSlot(SlotPosition);
-        // WorldState уже содержит правильное значение, ApplyValueToWorld не нужен
-        return true;
+        if (found != null)
+            PlaceCommandInternal(found);
+        // Если команды с таким значением нет — слот пустой, WorldState не меняем
     }
 
-    /// <summary>Ищет в текущей сцене HackCommand с указанным Value, который ещё не в слоте.</summary>
     private HackCommand FindFreeCommandWithValue(string value)
     {
         HackCommand[] all = FindObjectsByType<HackCommand>(FindObjectsSortMode.None);
         foreach (var cmd in all)
         {
             if (cmd == null) continue;
-            if (cmd.IsInSlot) continue; // уже в каком-то другом слоте
+            if (cmd.IsInSlot) continue;
             if (string.Equals(cmd.Value, value, System.StringComparison.OrdinalIgnoreCase))
                 return cmd;
         }
@@ -141,68 +97,63 @@ public class HackSlot : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag(playerTag)) return;
-
         var c = other.GetComponentInParent<PlayerCommandCarrier>();
         if (c == null) return;
-
-        carrier = c;
-        playerInRange = true;
-        UpdatePrompt();
+        c.NotifySlotEnter(this);
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!other.CompareTag(playerTag)) return;
-        playerInRange = false;
-        InteractionPrompt.Instance?.Hide();
+        var c = other.GetComponentInParent<PlayerCommandCarrier>();
+        if (c == null) return;
+        c.NotifySlotExit(this);
     }
 
-    private void Update()
+    /// <summary>
+    /// Поместить команду в слот. Вызывается из PlayerCommandCarrier.
+    /// Если слот занят — старая команда выпадает в позицию игрока.
+    /// </summary>
+    public void PlaceCommand(HackCommand incoming)
     {
-        if (playerInRange) UpdatePrompt();
+        if (incoming == null) return;
+
+        // Определяем куда выкинуть старую (если она есть)
+        Vector3 oldDropPos = SlotPosition;
+        var carrier = FindAnyObjectByType<PlayerCommandCarrier>();
+        if (carrier != null) oldDropPos = carrier.DropPosition;
+
+        if (CurrentCommand != null && CurrentCommand != incoming)
+            CurrentCommand.EjectFromSlot(oldDropPos);
+
+        // carrier теперь не несёт incoming
+        if (carrier != null) carrier.ClearHeld();
+
+        PlaceCommandInternal(incoming);
+        ApplyValueToWorld(incoming.Value);
     }
 
-    private void UpdatePrompt()
+    private void PlaceCommandInternal(HackCommand cmd)
     {
-        if (carrier == null) { InteractionPrompt.Instance?.Hide(); return; }
-
-        if (carrier.HeldCommand != null)
-            InteractionPrompt.Instance?.Show(placePromptText);
-        else if (currentCommand != null)
-            InteractionPrompt.Instance?.Show(takePromptText);
-        else
-            InteractionPrompt.Instance?.Hide();
+        CurrentCommand = cmd;
+        cmd.PlaceInSlot(SlotPosition);
     }
 
-    private void OnInteractPerformed(InputAction.CallbackContext ctx)
+    /// <summary>
+    /// Забрать команду из слота. Возвращает команду или null если слот пустой.
+    /// Вызывается из PlayerCommandCarrier.
+    /// </summary>
+    public HackCommand TakeCommand()
     {
-        if (!playerInRange || carrier == null) return;
+        if (CurrentCommand == null) return null;
 
-        if (carrier.HeldCommand != null)
-        {
-            HackCommand incoming = carrier.HeldCommand;
+        HackCommand taken = CurrentCommand;
+        CurrentCommand = null;
 
-            if (currentCommand != null && currentCommand != incoming)
-                currentCommand.EjectFromSlot(carrier.DropPosition);
+        if (onEmptyMode == EmptyMode.SetEmpty)
+            ApplyValueToWorld(emptyValue);
 
-            incoming.PlaceInSlot(SlotPosition);
-            currentCommand = incoming;
-
-            ApplyValueToWorld(currentCommand.Value);
-            UpdatePrompt();
-            return;
-        }
-
-        if (currentCommand != null)
-        {
-            currentCommand.TakeFromSlot(carrier);
-            currentCommand = null;
-
-            if (onEmptyMode == EmptyMode.SetEmpty)
-                ApplyValueToWorld(emptyValue);
-
-            UpdatePrompt();
-        }
+        return taken;
     }
 
     private void ApplyValueToWorld(string value)

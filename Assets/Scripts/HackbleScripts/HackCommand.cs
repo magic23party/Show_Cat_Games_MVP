@@ -1,12 +1,13 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
-/// Перетаскиваемая команда (например "True", "False").
+/// Команда (например "True", "False", "red"). Пассивный объект.
 /// 
-/// Без физики — команда просто меняет позицию через transform.
-/// Когда несётся — следует за carrier.CarryPosition (над головой).
-/// Когда отпускается вне слота — встаёт в carrier.DropPosition (центр игрока).
+/// Логика хватания/отпускания обрабатывается в PlayerCommandCarrier (на игроке).
+/// Этот скрипт только:
+/// - сообщает carrier о появлении/уходе игрока (через триггер)
+/// - выполняет команды carrier-а (AttachToCarrier, DropAt, PlaceInSlot и т.д.)
+/// - визуально следует за carrier-ом пока несётся
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class HackCommand : MonoBehaviour
@@ -17,107 +18,51 @@ public class HackCommand : MonoBehaviour
     [Header("Player Detection")]
     [SerializeField] private string playerTag = "Player";
 
-    [Header("Input")]
-    [SerializeField] private InputActionReference interactAction;
-
-    [Header("UI Hint")]
-    [SerializeField] private string grabPromptText = "Press E to grab";
-
     public string Value => commandValue;
     public bool IsInSlot { get; private set; }
     public bool IsHeld => carrier != null && carrier.HeldCommand == this;
 
-    private bool playerInRange;
     private PlayerCommandCarrier carrier;
-    private bool justTakenFromSlot;
-
-    private void OnEnable()
-    {
-        if (interactAction != null)
-        {
-            interactAction.action.Enable();
-            interactAction.action.performed += OnInteractPerformed;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (interactAction != null)
-            interactAction.action.performed -= OnInteractPerformed;
-    }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag(playerTag)) return;
-        if (IsHeld || IsInSlot) return;
-
         var c = other.GetComponentInParent<PlayerCommandCarrier>();
         if (c == null) return;
-
-        carrier = c;
-        playerInRange = true;
-
-        if (carrier.HeldCommand == null)
-            InteractionPrompt.Instance?.Show(grabPromptText);
+        c.NotifyCommandEnter(this);
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!other.CompareTag(playerTag)) return;
-        playerInRange = false;
-        InteractionPrompt.Instance?.Hide();
+        var c = other.GetComponentInParent<PlayerCommandCarrier>();
+        if (c == null) return;
+        c.NotifyCommandExit(this);
     }
 
-    private void OnInteractPerformed(InputAction.CallbackContext ctx)
+    /// <summary>Вызывается из PlayerCommandCarrier когда игрок берёт команду.</summary>
+    public void AttachToCarrier(PlayerCommandCarrier c)
     {
-        if (carrier == null) return;
-        if (justTakenFromSlot) return;
-        if (IsInSlot) return;
-
-        if (IsHeld)
-        {
-            DropAtPlayer();
-            return;
-        }
-
-        if (playerInRange && carrier.HeldCommand == null)
-            PickUp();
-    }
-
-    public void PickUp()
-    {
-        if (carrier == null) return;
-        carrier.SetHeld(this);
-        IsInSlot = false;
-        InteractionPrompt.Instance?.Hide();
-    }
-
-    /// <summary>Уронить команду в позицию игрока (центр).</summary>
-    public void DropAtPlayer()
-    {
-        if (carrier == null) return;
-        transform.position = carrier.DropPosition;
-        carrier.ClearHeld();
+        carrier = c;
         IsInSlot = false;
     }
 
+    /// <summary>Уронить в указанную позицию. Команда больше не несётся и не в слоте.</summary>
+    public void DropAt(Vector3 worldPos)
+    {
+        transform.position = worldPos;
+        IsInSlot = false;
+        // carrier не нулим — он остаётся как ссылка на последнего носителя, но HeldCommand уже null
+    }
+
+    /// <summary>Поставить в слот.</summary>
     public void PlaceInSlot(Vector3 worldPos)
     {
-        if (carrier != null && carrier.HeldCommand == this)
-            carrier.ClearHeld();
-
         transform.position = worldPos;
         IsInSlot = true;
     }
 
-    public void TakeFromSlot(PlayerCommandCarrier byCarrier)
-    {
-        carrier = byCarrier;  // <-- устанавливаем carrier явно
-        IsInSlot = false;
-        PickUp();
-        justTakenFromSlot = true;
-    }
-
+    /// <summary>Команду выкинули из слота (заменили другой).</summary>
     public void EjectFromSlot(Vector3 worldPos)
     {
         transform.position = worldPos;
@@ -126,9 +71,8 @@ public class HackCommand : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Если несёмся — следуем за carrier
         if (IsHeld && carrier != null)
             transform.position = carrier.CarryPosition;
-
-        justTakenFromSlot = false;
     }
 }

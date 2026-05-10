@@ -1389,13 +1389,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HackSlot
   targetObjectId: Door_Red
   targetPropertyType: Active
+  onEmptyMode: 0
   emptyValue: false
   commandAnchor: {fileID: 1041058564}
   initialCommand: {fileID: 1226647065}
   playerTag: Player
-  interactAction: {fileID: 7905409572362675967, guid: 779ec90fde5150045aad8f8c0c364448, type: 3}
-  placePromptText: Press E to place
-  takePromptText: Press E to take
 --- !u!61 &559994886
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1965,8 +1963,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HackCommand
   commandValue: true
   playerTag: Player
-  interactAction: {fileID: 7905409572362675967, guid: 779ec90fde5150045aad8f8c0c364448, type: 3}
-  grabPromptText: Press E to grab
 --- !u!61 &1226647066
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2404,8 +2400,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HackCommand
   commandValue: false
   playerTag: Player
-  interactAction: {fileID: 7905409572362675967, guid: 779ec90fde5150045aad8f8c0c364448, type: 3}
-  grabPromptText: Press E to grab
 --- !u!61 &1897997590
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2606,6 +2600,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 6241714510780802680, guid: 8df91cb297f60c04c9706753ea914b78, type: 3}
+      propertyPath: interactAction
+      value: 
+      objectReference: {fileID: 7905409572362675967, guid: 779ec90fde5150045aad8f8c0c364448, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
