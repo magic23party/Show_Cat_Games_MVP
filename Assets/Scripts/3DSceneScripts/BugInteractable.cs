@@ -6,9 +6,10 @@ using UnityEngine.InputSystem;
 /// Требует Collider с Is Trigger = true.
 ///
 /// Защита от повторного срабатывания E при выходе из 2D:
-/// - Игнорирует нажатия E если 3D-игрок неактивен (мы в 2D-сцене).
+/// - Игнорирует нажатия E если игрок уже внутри какого-либо 2D-бага (GameManager.IsInBug).
 /// - Игнорирует нажатия пока идёт переход (IsTransitioning).
-/// - Сбрасывает playerInRange когда 3D-игрок отключается, чтобы избежать "застрявшего" флага.
+/// - Сбрасывает playerInRange когда мы заходим в 2D, чтобы избежать "застрявшего" флага
+///   (OnTriggerExit не срабатывает при SetActive(false) на игроке).
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class BugInteractable : MonoBehaviour
@@ -18,11 +19,6 @@ public class BugInteractable : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private InputActionReference interactAction;
-
-    [Header("Player Reference")]
-    [Tooltip("Корневой GameObject 3D-игрока. Используется для проверки 'мы в 3D-мире?'. " +
-             "Можно оставить пустым — тогда возьмётся из GameManager (если он назначил player3D).")]
-    [SerializeField] private GameObject player3D;
 
     private bool playerInRange = false;
 
@@ -49,9 +45,9 @@ public class BugInteractable : MonoBehaviour
 
     private void Update()
     {
-        // Если 3D-игрок отключился (мы ушли в 2D) — сбрасываем флаг.
-        // OnTriggerExit при SetActive(false) не вызывается, поэтому делаем сами.
-        if (playerInRange && !IsPlayer3DActive())
+        // Если мы уже внутри 2D-бага — сбрасываем флаг и прячем подсказку.
+        // OnTriggerExit при SetActive(false) на игроке не вызывается, поэтому делаем сами.
+        if (playerInRange && GameManager.Instance != null && GameManager.Instance.IsInBug)
         {
             playerInRange = false;
             InteractionPrompt.Instance?.Hide();
@@ -77,19 +73,9 @@ public class BugInteractable : MonoBehaviour
         if (!playerInRange) return;
         if (GameManager.Instance == null) return;
         if (GameManager.Instance.IsTransitioning) return;
-        if (!IsPlayer3DActive()) return; // <-- главная защита от срабатывания в 2D
+        if (GameManager.Instance.IsInBug) return; // главная защита от срабатывания E из 2D
 
         InteractionPrompt.Instance?.Hide();
         GameManager.Instance.EnterBug(bugData);
-    }
-
-    private bool IsPlayer3DActive()
-    {
-        // Если ссылка задана вручную — используем её
-        if (player3D != null) return player3D.activeInHierarchy;
-
-        // Иначе проверяем через GameManager (если он есть)
-        // Это менее надёжно, но позволяет не настраивать поле руками
-        return true; // если ссылки нет — считаем активным (старое поведение)
     }
 }

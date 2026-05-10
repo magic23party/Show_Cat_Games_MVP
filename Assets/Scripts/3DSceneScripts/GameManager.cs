@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
     public void EnterBug(BugData data)
     {
         if (isTransitioning) return;
+        if (currentBug != null) return; // already inside a bug — ignore stray E presses
         if (data == null) { Debug.LogError("[GameManager] BugData is null!"); return; }
 
         isTransitioning = true;
@@ -172,4 +173,7 @@ public class GameManager : MonoBehaviour
     }
 
     public bool IsTransitioning => isTransitioning;
+
+    /// <summary>True пока игрок находится внутри 2D-бага (между EnterBug и ExitBug).</summary>
+    public bool IsInBug => currentBug != null;
 }
