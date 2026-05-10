@@ -4,24 +4,13 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Единая логика взаимодействия игрока с командами и слотами.
-///
-/// Слушает E. Когда нажимается:
-/// - Если несёт команду + рядом слот → ставит команду в слот.
-/// - Если несёт команду + НЕ рядом со слотом → роняет команду в позицию игрока.
-/// - Если не несёт + рядом слот с командой → берёт команду из слота.
-/// - Если не несёт + рядом свободная команда → берёт её.
-///
-/// HackCommand и HackSlot регистрируют себя в этом carrier через триггеры
-/// (NotifyEnter/NotifyExit), сами больше не слушают E.
 /// </summary>
 public class PlayerCommandCarrier : MonoBehaviour
 {
     [Header("Carry / Drop Positions")]
-    [Tooltip("Куда крепится команда когда несётся (над головой).")]
     [SerializeField] private Transform carryAnchor;
     [SerializeField] private Vector3 carryOffset = new Vector3(0, 1f, 0);
 
-    [Tooltip("Куда падает команда когда роняется (центр игрока).")]
     [SerializeField] private Transform dropAnchor;
     [SerializeField] private Vector3 dropOffset = Vector3.zero;
 
@@ -41,7 +30,6 @@ public class PlayerCommandCarrier : MonoBehaviour
     public Vector3 DropPosition =>
         dropAnchor != null ? dropAnchor.position : transform.position + dropOffset;
 
-    // Списки объектов, в зону которых мы зашли
     private readonly HashSet<HackCommand> commandsInRange = new HashSet<HackCommand>();
     private readonly HashSet<HackSlot> slotsInRange = new HashSet<HackSlot>();
 
@@ -65,21 +53,16 @@ public class PlayerCommandCarrier : MonoBehaviour
     public void NotifySlotEnter(HackSlot slot) => slotsInRange.Add(slot);
     public void NotifySlotExit(HackSlot slot) => slotsInRange.Remove(slot);
 
-    private void Update()
-    {
-        UpdatePrompt();
-    }
+    private void Update() => UpdatePrompt();
 
     private void UpdatePrompt()
     {
-        // Приоритет 1: несём команду + рядом слот → "place"
         if (HeldCommand != null && GetNearestSlot() != null)
         {
             InteractionPrompt.Instance?.Show(placePromptText);
             return;
         }
 
-        // Приоритет 2: не несём + рядом слот с командой → "take"
         if (HeldCommand == null)
         {
             HackSlot s = GetNearestSlot();
@@ -89,7 +72,6 @@ public class PlayerCommandCarrier : MonoBehaviour
                 return;
             }
 
-            // Приоритет 3: не несём + рядом свободная команда (не в слоте) → "grab"
             HackCommand c = GetNearestFreeCommand();
             if (c != null)
             {
@@ -98,13 +80,11 @@ public class PlayerCommandCarrier : MonoBehaviour
             }
         }
 
-        // Иначе скрываем
         InteractionPrompt.Instance?.Hide();
     }
 
     private HackSlot GetNearestSlot()
     {
-        // Удаляем мёртвые ссылки и возвращаем первый
         slotsInRange.RemoveWhere(s => s == null);
         foreach (var s in slotsInRange) return s;
         return null;
@@ -116,7 +96,7 @@ public class PlayerCommandCarrier : MonoBehaviour
         foreach (var c in commandsInRange)
         {
             if (c == null) continue;
-            if (c.IsInSlot) continue; // в слоте — не считается свободной
+            if (c.IsInSlot) continue;
             if (c == HeldCommand) continue;
             return c;
         }
@@ -131,15 +111,17 @@ public class PlayerCommandCarrier : MonoBehaviour
             HackSlot slot = GetNearestSlot();
             if (slot != null)
             {
-                // Ставим в слот
+                // Ставим в слот (HackSlot.PlaceCommand уже играет CmdOn)
                 slot.PlaceCommand(HeldCommand);
-                // (HeldCommand станет null внутри PlaceCommand)
             }
             else
             {
                 // Роняем
                 HeldCommand.DropAt(DropPosition);
                 ClearHeld();
+
+                // SFX: бросание команды
+                SoundManager.Instance?.PlaySFX("Cmd_Drop");
             }
             UpdatePrompt();
             return;
@@ -149,8 +131,14 @@ public class PlayerCommandCarrier : MonoBehaviour
         HackSlot nearbySlot = GetNearestSlot();
         if (nearbySlot != null && nearbySlot.CurrentCommand != null)
         {
-            HackCommand cmd = nearbySlot.TakeCommand();
-            if (cmd != null) PickUp(cmd);
+            HackCommand cmd = nearbySlot.TakeCommand(); // тут играет CmdOff
+            if (cmd != null)
+            {
+                PickUp(cmd);
+                // CmdOff уже сыграл в TakeCommand — не дублируем Cmd_Grab.
+                // Если хочешь чтобы и тут играл Cmd_Grab — раскомментируй строку ниже:
+                // SoundManager.Instance?.PlaySFX("Cmd_Grab");
+            }
             UpdatePrompt();
             return;
         }
@@ -160,6 +148,10 @@ public class PlayerCommandCarrier : MonoBehaviour
         if (free != null)
         {
             PickUp(free);
+
+            // SFX: подбор команды с пола
+            SoundManager.Instance?.PlaySFX("Cmd_Grab");
+
             UpdatePrompt();
         }
     }

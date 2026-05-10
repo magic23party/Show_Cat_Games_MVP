@@ -2,24 +2,11 @@ using UnityEngine;
 
 /// <summary>
 /// Слот для команды. Пассивный — не слушает E.
-/// 
-/// Логика взаимодействия в PlayerCommandCarrier на игроке.
-/// Этот скрипт:
-/// - сообщает carrier когда игрок зашёл/вышел из зоны (через триггер)
-/// - предоставляет методы PlaceCommand / TakeCommand
-/// - применяет значение текущей команды к WorldState
-/// - при старте восстанавливает состояние из WorldState (или использует initialCommand)
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class HackSlot : MonoBehaviour
 {
-    public enum EmptyMode
-    {
-        /// <summary>Пустой слот → WorldState не трогается (для дверей).</summary>
-        RememberLast,
-        /// <summary>Пустой слот → WorldState получает emptyValue (для цветов).</summary>
-        SetEmpty
-    }
+    public enum EmptyMode { RememberLast, SetEmpty }
 
     [Header("Target")]
     [SerializeField] private string targetObjectId;
@@ -32,7 +19,7 @@ public class HackSlot : MonoBehaviour
     [Header("Slot Position")]
     [SerializeField] private Transform commandAnchor;
 
-    [Header("Initial State (используется если в WorldState ничего нет)")]
+    [Header("Initial State")]
     [SerializeField] private HackCommand initialCommand;
 
     [Header("Player Detection")]
@@ -55,7 +42,6 @@ public class HackSlot : MonoBehaviour
 
         string saved = ws.GetString(targetObjectId, targetPropertyType, null);
 
-        // КЕЙС 1: WorldState пустой → используем initialCommand
         if (string.IsNullOrEmpty(saved))
         {
             if (initialCommand != null)
@@ -71,14 +57,12 @@ public class HackSlot : MonoBehaviour
             return;
         }
 
-        // КЕЙС 2: В WorldState есть значение
         if (onEmptyMode == EmptyMode.SetEmpty && saved == emptyValue)
-            return; // слот пустой
+            return;
 
         HackCommand found = FindFreeCommandWithValue(saved);
         if (found != null)
             PlaceCommandInternal(found);
-        // Если команды с таким значением нет — слот пустой, WorldState не меняем
     }
 
     private HackCommand FindFreeCommandWithValue(string value)
@@ -110,15 +94,10 @@ public class HackSlot : MonoBehaviour
         c.NotifySlotExit(this);
     }
 
-    /// <summary>
-    /// Поместить команду в слот. Вызывается из PlayerCommandCarrier.
-    /// Если слот занят — старая команда выпадает в позицию игрока.
-    /// </summary>
     public void PlaceCommand(HackCommand incoming)
     {
         if (incoming == null) return;
 
-        // Определяем куда выкинуть старую (если она есть)
         Vector3 oldDropPos = SlotPosition;
         var carrier = FindAnyObjectByType<PlayerCommandCarrier>();
         if (carrier != null) oldDropPos = carrier.DropPosition;
@@ -126,11 +105,13 @@ public class HackSlot : MonoBehaviour
         if (CurrentCommand != null && CurrentCommand != incoming)
             CurrentCommand.EjectFromSlot(oldDropPos);
 
-        // carrier теперь не несёт incoming
         if (carrier != null) carrier.ClearHeld();
 
         PlaceCommandInternal(incoming);
         ApplyValueToWorld(incoming.Value);
+
+        // SFX: команду подключили к слоту
+        SoundManager.Instance?.PlaySFX("CmdOn");
     }
 
     private void PlaceCommandInternal(HackCommand cmd)
@@ -139,10 +120,6 @@ public class HackSlot : MonoBehaviour
         cmd.PlaceInSlot(SlotPosition);
     }
 
-    /// <summary>
-    /// Забрать команду из слота. Возвращает команду или null если слот пустой.
-    /// Вызывается из PlayerCommandCarrier.
-    /// </summary>
     public HackCommand TakeCommand()
     {
         if (CurrentCommand == null) return null;
@@ -152,6 +129,9 @@ public class HackSlot : MonoBehaviour
 
         if (onEmptyMode == EmptyMode.SetEmpty)
             ApplyValueToWorld(emptyValue);
+
+        // SFX: команду отключили от слота
+        SoundManager.Instance?.PlaySFX("CmdOff");
 
         return taken;
     }

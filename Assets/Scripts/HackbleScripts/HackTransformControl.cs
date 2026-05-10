@@ -4,12 +4,6 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Контроль одной оси Scale или Rotation в 2D-сцене.
-/// Игрок подходит к цифре, жмёт E — значение +step (циклически возвращается к min при превышении max).
-///
-/// Настройка:
-/// - На GameObject должен быть Collider2D с Is Trigger = true.
-/// - В инспекторе указываешь: какой объект, какой тип (Scale/Rotation), какая ось (X/Y/Z), min/max/step.
-/// - tmpLabel — TMP-текст, который покажет текущее значение.
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class HackTransformControl : MonoBehaviour
@@ -18,27 +12,16 @@ public class HackTransformControl : MonoBehaviour
     public enum Axis { X, Y, Z }
 
     [Header("Target")]
-    [Tooltip("ID объекта в 3D (тот же, что в HackableObject.objectId).")]
     public string targetObjectId;
-
-    [Tooltip("Что меняем: Scale или Rotation.")]
     public AxisType axisType = AxisType.Scale;
-
-    [Tooltip("Какую ось меняем: X, Y или Z.")]
     public Axis axis = Axis.X;
 
-    [Header("Range (настраивай как нужно)")]
-    [Tooltip("Минимальное значение (стартовое). Для Scale обычно 1, для Rotation обычно 0.")]
+    [Header("Range")]
     public int minValue = 1;
-
-    [Tooltip("Максимальное значение. После него возвращается к minValue.")]
     public int maxValue = 3;
-
-    [Tooltip("Шаг изменения. Для Scale обычно 1, для Rotation в твоём случае 15 (градусов).")]
     public int step = 1;
 
     [Header("UI")]
-    [Tooltip("TMP-текст, который покажет текущее значение. Если null — скрипт сам найдёт TMP в детях.")]
     public TMP_Text tmpLabel;
 
     [Header("Player Detection")]
@@ -55,10 +38,7 @@ public class HackTransformControl : MonoBehaviour
 
     private void Awake()
     {
-        // Формируем propertyType из axisType + axis (например "Scale.X")
         propertyType = $"{axisType}.{axis}";
-
-        // Если TMP не назначен — пробуем найти в детях
         if (tmpLabel == null)
             tmpLabel = GetComponentInChildren<TMP_Text>();
     }
@@ -110,13 +90,13 @@ public class HackTransformControl : MonoBehaviour
         var ws = GameManager.Instance.World;
         int current = ws.GetInt(targetObjectId, propertyType, minValue);
         int next = current + step;
-
-        // Циклический сброс при превышении максимума
-        if (next > maxValue)
-            next = minValue;
+        if (next > maxValue) next = minValue;
 
         ws.SetInt(targetObjectId, propertyType, next);
         UpdateLabel();
+
+        // SFX: переключение значения
+        SoundManager.Instance?.PlaySFX("Switch");
     }
 
     private void UpdateLabel()
