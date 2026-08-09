@@ -15,6 +15,12 @@ namespace AZE.AdvancedFirstPerson
 
         private float maxDoubleTapTime = 0.2f;
 
+        // Move is a Value action, so it is polled every frame. A worn analog stick
+        // never rests at exactly zero, and without a deadzone that residual drift
+        // keeps MoveInput non-zero forever: the state machine never falls back to
+        // Idle and the player walks off on its own.
+        private float moveDeadzone = 0.2f;
+
         public Vector2 MoveInput { get; private set; }
         public Vector2 LookInput { get; private set; }
         public bool JumpTriggered { get; private set; }
@@ -49,7 +55,9 @@ namespace AZE.AdvancedFirstPerson
 
         private void Update()
         {
-            MoveInput = moveAction.action.ReadValue<Vector2>();
+            Vector2 rawMove = moveAction.action.ReadValue<Vector2>();
+            MoveInput = rawMove.sqrMagnitude < moveDeadzone * moveDeadzone ? Vector2.zero : rawMove;
+
             LookInput = lookAction.action.ReadValue<Vector2>();
 
             JumpTriggered = jumpAction.action.WasPressedThisFrame();

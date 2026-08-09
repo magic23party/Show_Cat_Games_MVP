@@ -27,7 +27,7 @@ EditorBuildSettings:
     path: Assets/Scenes/2DScenes/Bug_04.unity
     guid: 772e2a83176f42a4a9d60fcd9a65bed9
   - enabled: 1
-    path: Assets/Scenes/Menu.unity
+    path: Assets/Scenes/EndMenu.unity
     guid: 7318dadd74d28234cbdc431a49764d3a
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: baad02ed314ed994698079d6c595bcfc, type: 2}

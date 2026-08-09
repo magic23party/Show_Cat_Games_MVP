@@ -19,6 +19,7 @@ namespace AZE.AdvancedFirstPerson
 
             Vector3 localDir = Vector3.zero;
 
+            if (ctx.InputHandler.DodgeDirection.y > 0) localDir += Vector3.forward;
             if (ctx.InputHandler.DodgeDirection.y < 0) localDir += Vector3.back;
             if (ctx.InputHandler.DodgeDirection.x < 0) localDir += Vector3.left;
             if (ctx.InputHandler.DodgeDirection.x > 0) localDir += Vector3.right;
